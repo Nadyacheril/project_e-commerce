@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Shopping Cart</title>
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+</head>
+
+<body class="bg-white font-sans">
+    <div class="max-w-4xl mx-auto px-4 py-10">
+        <!-- Header -->
+        <div class="flex items-center space-x-3 mb-6">
+           
+            <h1 class="text-3xl font-bold text-red-900 mt-10">My Shopping Cart</h1>
+        </div>
+
+        <!-- Select All -->
+        <div class="flex items-center space-x-2 mb-4">
+            <input type="checkbox" id="check-all" class="accent-red-700">
+            <label for="check-all" class="text-gray-800 text-sm font-medium">Select All</label>
+        </div>
+
+        <!-- Cart Items -->
+        <div id="cart-container" class="space-y-4"></div>
+
+        <!-- Total and Buy -->
+        <div class="mt-6">
+            <div id="total-harga" class="text-xl font-semibold text-red-800 mb-4"></div>
+            <button onclick="buySelectedItems()"
+                class="bg-red-900 hover:bg-red-800 active:bg-red-800 text-white px-4 py-2 rounded-xl font-semibold transition transform hover:scale-105 active:scale-95 duration-150 ease-in-out">
+                BUY SELECTED
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 hidden bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+    </div>
+
+    <script>
+        function renderCart() {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const container = document.getElementById('cart-container');
+            container.innerHTML = "";
+ 
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-gray-600">Keranjang kosong.</p>';
+                document.getElementById('total-harga').textContent = '';
+            } else {
+                cart.forEach((item, index) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'flex items-center justify-between border p-4 rounded-lg shadow-sm';
+
+                    itemDiv.innerHTML = `
+                        <div class="flex items-center space-x-4">
+                            <input type="checkbox" class="item-checkbox accent-red-700" data-index="${index}" />
+                            <img src="${item.image}" alt="${item.title}" class="w-20 h-20 object-contain" />
+                            <div>
+                                <h2 class="font-semibold text-lg">${item.title}</h2>
+                                <p class="text-red-800 font-semibold">$${item.price}</p>
+                              <div class="flex items-center space-x-2 mt-1">
+    <button onclick="updateQty(${index}, -1)" class="bg-red-200 px-2 rounded">-</button>
+    <span id="qty-${index}">${item.quantity}</span>
+
+    <button onclick="updateQty(${index}, 1)" class="bg-red-200 px-2 rounded">+</button>
+    <span class="ml-4 text-sm text-gray-700 font-medium">Total: $<span class="item-total" id="item-total-${index}">${(item.price * item.quantity).toFixed(2)}</span></span>
+</div>
+
+                            </div>
+                        </div>
+                        <button onclick="removeItem(${index})" class="text-red-600 hover:text-red-800 font-semibold text-sm">Remove</button>
+                    `;
+
+                    container.appendChild(itemDiv);
+                });
+
+                // Show notification
+                const toast = document.getElementById('toast');
+                toast.textContent = `${cart.length} item(s) in your cart!`;
+                toast.classList.remove('hidden');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 2000);
+            }
+
+            updateTotalHarga();
+            addCheckboxListeners();
+        }
+
+       
+        
+        function removeItem(index) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+        }
+
+        function updateTotalHarga() {
+                const checkboxes = document.querySelectorAll('.item-checkbox');
+                const cart = JSON.parse(localStorage.getItem('cart')) || [];
+                let total = 0;
+
+                checkboxes.forEach((checkbox) => {
+                    if (checkbox.checked) {
+                        const index = parseInt(checkbox.dataset.index);
+                        total += cart[index].price * cart[index].quantity;
+                    }
+                });
+
+                document.getElementById('total-harga').textContent = `Total Harga: $${total.toFixed(2)}`;
+            }
+        
+            function updateQty(index, change) {
+                let cart = JSON.parse(localStorage.getItem('cart')) || [];
+                cart[index].quantity += change;
+
+                if (cart[index].quantity < 1) {
+                    cart.splice(index, 1);
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    renderCart();
+                } else {
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    document.getElementById(`qty-${index}`).textContent = cart[index].quantity;
+                    document.getElementById(`item-total-${index}`).textContent = (cart[index].price * cart[index].quantity).toFixed(2);
+                    updateTotalHarga();
+                }
+            }
+        
+        
+
+        function addCheckboxListeners() {
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            const checkAll = document.getElementById('check-all');
+
+            checkboxes.forEach((checkbox) => {
+                checkbox.addEventListener('change', () => {
+                    const allChecked = [...checkboxes].every(cb => cb.checked);
+                    checkAll.checked = allChecked;
+                    updateTotalHarga();
+                });
+            });
+
+            checkAll.addEventListener('change', () => {
+                checkboxes.forEach(cb => cb.checked = checkAll.checked);
+                updateTotalHarga();
+            });
+        }
+
+        function buySelectedItems() {
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const selectedItems = [];
+
+            checkboxes.forEach((checkbox) => {
+                if (checkbox.checked) {
+                    const index = parseInt(checkbox.dataset.index);
+                    selectedItems.push(cart[index]);
+                }
+            });
+
+            if (selectedItems.length === 0) {
+                alert("Select at least 1 item to purchase.");
+                return;
+            }
+
+            localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
+            const remainingCart = cart.filter((item, index) => {
+                return !checkboxes[index].checked;
+            });
+            localStorage.setItem('cart', JSON.stringify(remainingCart));
+            window.location.href = "checkout.html";
+        }
+
+        window.onload = () => {
+            renderCart();
+        };
+    </script>
+</body>
+
+</html>

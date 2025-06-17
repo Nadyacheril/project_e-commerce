@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Checkout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-pink-100 p-6">
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-md p-6">
+        <h2 class="text-xl font-bold text-center text-red-700 mb-4">Check Out</h2>
+
+        <!-- Produk yang dipilih -->
+        <div id="productList" class="space-y-3 mb-6"></div>
+
+        <!-- Alamat -->
+        <div class="mb-6">
+            <h3 class="font-semibold text-red-700">Destination information</h3>
+            <p id="addressDisplay" class="text-sm mt-1 text-gray-700">ot filled in yet</p>
+            <button onclick="openModal()" class="text-blue-600 text-sm mt-1">Change</button>
+        </div>
+
+        <!-- Metode Pembayaran -->
+        <div class="mb-6">
+            <h3 class="font-semibold text-red-700">Payment method</h3>
+            <select id="paymentMethod" class="mt-1 border border-gray-300 rounded px-2 py-1 text-sm">
+                <option value="">Choose a method</option>
+                <option value="visa">Visa</option>
+                <option value="gopay">Gopay</option>
+                <option value="bank">Bank Transfer</option>
+            </select>
+        </div>
+
+        <!-- Ringkasan -->
+        <div id="summary" class="mb-4 text-sm text-gray-800">
+            <div class="flex justify-between"><span>Order</span><span id="orderPrice">$0.00</span></div>
+            <div class="flex justify-between"><span>Tax</span><span id="taxPrice">$0.00</span></div>
+            <div class="flex justify-between"><span>Delivery</span><span>Free</span></div>
+            <hr class="my-2">
+            <div class="flex justify-between font-bold text-lg"><span>Total :</span><span id="totalPrice">$0.00</span>
+            </div>
+        </div>
+
+        <!-- Tombol Confirm -->
+        <button onclick="confirmOrder()"
+            class="bg-red-800 hover:bg-red-700 text-white w-full py-2 rounded-lg font-semibold">Confirm</button>
+    </div>
+
+    <!-- MODAL INPUT ALAMAT -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center z-10 min-h-screen">
+
+        <div class="bg-white p-6 rounded-lg w-[90%] max-w-md space-y-4">
+            <h3 class="font-semibold text-lg text-red-700">Fill in Address and Telephone Number</h3>
+            <input type="text" id="addressInput" placeholder="Alamat lengkap..."
+                class="w-full border px-3 py-2 rounded">
+            <input type="text" id="phoneInput" placeholder="Nomor telepon..." class="w-full border px-3 py-2 rounded">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal()" class="text-gray-600">Cancelled</button>
+                <button onclick="saveAddress()" class="bg-red-700 text-white px-4 py-1 rounded">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SUKSES -->
+    <div id="successModal"
+        class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center z-20 min-h-screen">
+
+        <div class="bg-white p-6 rounded-lg text-center space-y-4 w-[90%] max-w-md relative">
+            <button onclick="closeSuccess()" class="absolute top-2 right-2 text-2xl font-bold">&times;</button>
+            <h2 class="text-lg font-bold text-red-800">Thank You For Shopping At XURA Store</h2>
+            <div class="flex justify-center">
+                <div class="bg-black rounded-full w-12 h-12 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+            </div>
+            <p class="text-sm text-gray-700">We will deliver your goods safely</p>
+        </div>
+    </div>
+
+
+    <script>
+        const selectedItems = JSON.parse(localStorage.getItem('selectedItems')) || [];
+
+        function renderSelectedItems() {
+            const container = document.getElementById('productList');
+            container.innerHTML = "";
+            let subtotal = 0;
+
+            selectedItems.forEach((item, index) => {
+                const totalPrice = item.price * item.quantity;
+                subtotal += totalPrice;
+
+                const div = document.createElement('div');
+                div.className = "flex gap-4 items-start";
+
+                div.innerHTML = ` 
+                        <img src="${item.image}" class="w-20 h-20 object-contain" />
+                        <div>
+                            <p class="font-semibold">${item.title}</p>
+                            <p class="text-sm text-gray-600">Qty: ${item.quantity}</p>
+                            <p class="text-red-700 font-bold">$${(item.price * item.quantity).toFixed(2)}</p>
+                        </div>
+                    `;
+                container.appendChild(div);
+            });
+
+            const tax = 4.00;
+            const total = subtotal + tax;
+
+            document.getElementById("orderPrice").textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById("taxPrice").textContent = `$${tax.toFixed(2)}`;
+            document.getElementById("totalPrice").textContent = `$${total.toFixed(2)}`;
+        }
+
+        function openModal() {
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        function saveAddress() {
+            const address = document.getElementById('addressInput').value.trim();
+            const phone = document.getElementById('phoneInput').value.trim();
+
+            if (address && phone) {
+                const fullAddress = `${address}, ${phone}`;
+                document.getElementById('addressDisplay').innerText = fullAddress;
+
+                localStorage.setItem('shippingAddress', address);
+                localStorage.setItem('shippingPhone', phone);
+
+                closeModal();
+            } else {
+                alert('Please fill in the address and telephone number correctly.');
+            }
+        }
+
+        function confirmOrder() {
+                const addressText = document.getElementById('addressDisplay').innerText;
+                const paymentMethod = document.getElementById('paymentMethod').value;
+
+                if (addressText === "Not filled yet" || !paymentMethod) {
+                    alert('Please fill in your address and telephone number first and select a payment method.');
+                } else {
+                    // Ambil data riwayat sebelumnya
+                    const history = JSON.parse(localStorage.getItem("history")) || [];
+
+                    // Ambil data baru dari keranjang
+                    const now = new Date().toISOString();
+                    selectedItems.forEach(item => {
+                        history.push({
+                            productId: item.id,
+                            quantity: item.quantity,
+                            size: item.size || "M", // optional, default M
+                            date: now
+                        });
+                    });
+
+                    // Simpan ke localStorage
+                    localStorage.setItem("history", JSON.stringify(history));
+
+                    // Bersihkan keranjang
+                    localStorage.removeItem('selectedItems');
+
+                    // Tampilkan modal sukses
+                    document.getElementById('successModal').classList.remove('hidden');
+                }
+            }
+        
+
+        function closeSuccess() {
+            window.location.href = "riwayat.html";
+        }
+
+        window.onload = function () {
+            renderSelectedItems();
+
+            const savedAddress = localStorage.getItem('shippingAddress');
+            const savedPhone = localStorage.getItem('shippingPhone');
+
+            if (savedAddress && savedPhone) {
+                document.getElementById('addressDisplay').innerText = `${savedAddress}, ${savedPhone}`;
+                document.getElementById('addressInput').value = savedAddress;
+                document.getElementById('phoneInput').value = savedPhone;
+            }
+        }
+    </script>
+    
+</body>
+
+</html>

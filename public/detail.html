@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Detail Produk</title>
+    <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+    
+</head>
+
+<body class="bg-white font-sans">
+
+    <div class="max-w-5xl mx-auto px-6 py-10">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="window.location.href='home1.html'">
+               
+            </button>
+            <h1 class="text-xl mt-10 font-bold text-red-900">Product Details</h1>
+            <a href="profil.html">
+                <img src="/foto2/lia.jpg" alt="profile" class="w-10 h-10 rounded-full" />
+            </a>
+              
+        </div>
+
+        <form class="mt-6 mb-10">
+            <div class="relative max-w-md mx-auto">
+                <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+                    <a href="card.html"></a>
+                    <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+                    </svg>
+                </div>
+                <input type="search" id="default-search"
+                    class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-red-500 focus:border-red-500"
+                    placeholder="Search..." required />
+                <button type="submit"
+                    class="text-white absolute end-2.5 bottom-2.5 bg-red-900 hover:bg-red-700 font-medium rounded-lg text-sm px-4 py-2">
+                    Search
+                </button>
+            </div>
+        </form>
+
+        <!-- Detail Produk -->
+        <div class="flex flex-col md:flex-row gap-8" id="product-detail">
+        </div>
+    </div>
+
+    
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const productId = params.get("id") || 1;
+
+        fetch(`https://fakestoreapi.com/products/${productId}`) //mengambil data dri fake store api
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('product-detail');
+                container.innerHTML =  `
+          <div class="flex-1">
+            
+            <img src="${data.image}" alt="${data.title}" class="w-full max-w-xs mx-auto object-contain h-80" />
+            <div class="flex mt-4 space-x-2 justify-center">
+              <img src="${data.image}" class="w-16 h-16 border" />
+              <img src="${data.image}" class="w-16 h-16 border" />
+              <img src="${data.image}" class="w-16 h-16 border" />
+            </div>
+          </div>
+          <div class="flex-1 space-y-4">
+            <h2 class="text-2xl font-bold">${data.title}</h2>
+            <div class="flex items-center space-x-2">
+              <div class="text-yellow-500">★★★★★</div>
+              <span class="text-sm text-gray-600">5.0</span>
+            </div>
+            <p class="text-xl font-semibold text-red-800">$${data.price}</p>
+            <div>
+            <label for="size" class="block text-sm font-medium text-gray-700">Choose Size:</label>
+            <select id="size" class="mt-1 block w-40 px-3 py-2 bg-white border border-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500">
+            <option value="S">Small (S)</option>
+            <option value="M">Medium (M)</option>
+            <option value="L">Large (L)</option>
+            <option value="XL">Extra Large (XL)</option>
+            </select>
+            </div>
+
+            <p class="text-gray-700">${data.description}</p>
+
+        
+            <div class="flex items-center gap-3">
+              <button onclick="ubahQty(-1)" class="bg-red-200 px-2 rounded">-</button>
+              <span id="jumlah">1</span>
+              <button onclick="ubahQty(1)" class="bg-red-200 px-2 rounded">+</button>
+            </div>
+
+            <div class="flex items-center space-x-4 mt-4">
+              <span>Share :</span>
+              <img src="https://cdn-icons-png.flaticon.com/512/1384/1384035.png" class="w-5 h-5" />
+              <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" class="w-5 h-5" />
+              <img src="https://cdn-icons-png.flaticon.com/512/145/145812.png" class="w-5 h-5" />
+            </div>
+
+            <div class="flex gap-3 mt-6">
+              <button onclick="addToCartAndGoToCheckout(${data.id})" class="font-semibold transition bg-red-700 text-white px-6 py-2 rounded shadow"title="Go to Buyy">BUYY</button>
+              <button onclick="addToCartAndGoToCart(${data.id})"class="font-semibold bg-red-900 border px-4 py-2 rounded text-white" title="Go to Cart">Add To Cart</button>
+            </div>
+          </div>
+        `;
+       
+            });
+
+        function ubahQty(change) {
+            const qtySpan = document.getElementById('jumlah');
+            let current = parseInt(qtySpan.textContent);
+            current += change;
+            if (current < 1) current = 1;
+            qtySpan.textContent = current;
+        } //fungsi nya untuk menambah/kurang jmlah produk yg mau di beli
+
+        function addToCartAndGoToCheckout(id) { //mengambil data ulng berdasarkan id
+                fetch(`https://fakestoreapi.com/products/${id}`)
+                    .then(res => res.json())
+                    .then(product => {
+                        const qty = parseInt(document.getElementById('jumlah').textContent);
+                        product.quantity = qty;
+
+                        // Simpan produk ini ke localStorage.selectedItems
+                        localStorage.setItem("selectedItems", JSON.stringify([product]));
+
+                        // Arahkan ke halaman checkout
+                        window.location.href = "checkout.html";
+                    });
+               }
+
+               function addToCartAndGoToCart(id) {
+                    fetch(`https://fakestoreapi.com/products/${id}`)
+                        .then(res => res.json())
+                        .then(product => {
+                            const qty = parseInt(document.getElementById('jumlah').textContent);
+                            const selectedSize = document.getElementById('size').value; // Ambil ukuran yang dipilih
+
+                            // Ambil cart dari localStorage
+                            let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+                            // Cek apakah produk sudah ada di cart (id dan ukuran yang sama)
+                            const existingIndex = cart.findIndex(item => item.id === product.id && item.size === selectedSize);
+
+                            if (existingIndex !== -1) {
+                                // Jika sudah ada, tambahkan jumlah
+                                cart[existingIndex].quantity += qty;
+                            } else {
+                                // Tambah produk baru ke keranjang
+                                cart.push({
+                                    id: product.id,
+                                    title: product.title,
+                                    price: product.price,
+                                    image: product.image,
+                                    size: selectedSize,
+                                    quantity: qty
+                                });
+                            }
+
+                            // Simpan ke localStorage
+                            localStorage.setItem("cart", JSON.stringify(cart));
+
+                            // Arahkan ke halaman keranjang
+                            window.location.href = "card.html";
+                        });
+                }
+            
+            
+            
+    </script>
+</body>
+
+</html>
